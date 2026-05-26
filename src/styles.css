@@ -1,0 +1,268 @@
+:root {
+  color-scheme: dark;
+  font-family:
+    Inter, "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #e6e8ec;
+  background: #15181d;
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  color: #20242b;
+  background: #f5f7f8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+body {
+  margin: 0;
+  overflow: hidden;
+}
+
+button {
+  min-width: 64px;
+  height: 32px;
+  border: 1px solid #c5cbd3;
+  border-radius: 6px;
+  color: inherit;
+  background: #ffffff;
+  font: inherit;
+  cursor: pointer;
+}
+
+button:hover:not(:disabled) {
+  border-color: #4b8f77;
+  background: #eef8f4;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+:root[data-theme="dark"] button {
+  border-color: #3b424d;
+  background: #20262e;
+}
+
+:root[data-theme="dark"] button:hover:not(:disabled) {
+  border-color: #70b79d;
+  background: #24342f;
+}
+
+.shell {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: 100vw;
+  height: 100vh;
+}
+
+.toolbar,
+.statusbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-color: #d7dce2;
+  background: #ffffff;
+}
+
+.toolbar {
+  height: 48px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #d7dce2;
+}
+
+.statusbar {
+  height: 28px;
+  padding: 0 12px;
+  border-top: 1px solid #d7dce2;
+  color: #66717f;
+  font-size: 12px;
+}
+
+:root[data-theme="dark"] .toolbar,
+:root[data-theme="dark"] .statusbar {
+  border-color: #303741;
+  background: #1b2027;
+}
+
+:root[data-theme="dark"] .statusbar {
+  color: #aab1bc;
+}
+
+.toolbar-group {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.file-title {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  color: #3a424d;
+  font-weight: 600;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+:root[data-theme="dark"] .file-title {
+  color: #d8dce3;
+}
+
+.workspace {
+  position: relative;
+  min-height: 0;
+  overflow: hidden;
+  background: #f5f7f8;
+}
+
+:root[data-theme="dark"] .workspace {
+  background: #15181d;
+}
+
+.workspace.is-dragging {
+  outline: 3px solid #4b8f77;
+  outline-offset: -3px;
+}
+
+.empty-state {
+  display: grid;
+  place-content: center;
+  height: 100%;
+  gap: 8px;
+  color: #66717f;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: #20242b;
+  font-size: 18px;
+}
+
+:root[data-theme="dark"] .empty-state {
+  color: #aab1bc;
+}
+
+:root[data-theme="dark"] .empty-state strong {
+  color: #f2f4f6;
+}
+
+.viewer {
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  padding: 28px clamp(20px, 5vw, 72px);
+  background: #ffffff;
+}
+
+:root[data-theme="dark"] .viewer {
+  background: #15181d;
+}
+
+.viewer.is-html {
+  padding: 0;
+  background: #ffffff;
+}
+
+.viewer > :first-child {
+  margin-top: 0;
+}
+
+.viewer h1,
+.viewer h2,
+.viewer h3 {
+  line-height: 1.2;
+}
+
+.viewer a {
+  color: #226d94;
+}
+
+:root[data-theme="dark"] .viewer a {
+  color: #8fc7e8;
+}
+
+.viewer pre {
+  overflow: auto;
+  padding: 14px;
+  border: 1px solid #d7dce2;
+  border-radius: 6px;
+  background: #f3f5f7;
+}
+
+:root[data-theme="dark"] .viewer pre {
+  border-color: #303741;
+  background: #1b2027;
+}
+
+.viewer code {
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 0.92em;
+}
+
+.viewer img,
+.mermaid-block svg {
+  max-width: 100%;
+  height: auto;
+}
+
+.html-frame {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  background: #ffffff;
+}
+
+.editor {
+  width: 100%;
+  height: 100%;
+  resize: none;
+  border: 0;
+  outline: 0;
+  padding: 22px;
+  color: inherit;
+  background: #ffffff;
+  font-family: "Cascadia Code", Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+:root[data-theme="dark"] .editor {
+  background: #15181d;
+}
+
+.mermaid-block {
+  overflow: auto;
+  margin: 20px 0;
+  padding: 16px;
+  border: 1px solid #d7dce2;
+  border-radius: 6px;
+  background: #fbfcfd;
+}
+
+:root[data-theme="dark"] .mermaid-block {
+  border-color: #303741;
+  background: #1b2027;
+}
+
+.mermaid-error {
+  margin: 20px 0;
+  padding: 12px;
+  border: 1px solid #c96f5a;
+  border-radius: 6px;
+  background: #fff4f1;
+}
+
+:root[data-theme="dark"] .mermaid-error {
+  background: #2a1f1d;
+}

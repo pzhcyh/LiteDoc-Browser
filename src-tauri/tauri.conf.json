@@ -1,0 +1,42 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "LiteDoc Browser",
+  "version": "0.1.0",
+  "identifier": "com.local.litedoc-browser",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "LiteDoc Browser",
+        "width": 1100,
+        "height": 760,
+        "minWidth": 760,
+        "minHeight": 520
+      }
+    ],
+    "security": {
+      "csp": null,
+      "assetProtocol": {
+        "enable": true,
+        "scope": ["D:\\\\**", "$DESKTOP/**", "$DOCUMENT/**", "$DOWNLOAD/**", "$HOME/**"]
+      }
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": ["icons/icon.ico"],
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "html", "htm"],
+        "name": "LiteDoc Browser Document",
+        "description": "Open with LiteDoc Browser"
+      }
+    ]
+  }
+}

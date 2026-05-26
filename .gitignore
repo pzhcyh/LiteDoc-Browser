@@ -1,0 +1,22 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+src-tauri/target/
+src-tauri/gen/
+
+# Local logs and temporary files
+*.log
+debug-*.png
+verification-*.png
+simple-test.html
+
+# Editor and OS files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Internal planning notes
+docs/superpowers/
