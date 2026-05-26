@@ -35,6 +35,10 @@ Not included yet:
 
 4. Run the `entry` module on a HarmonyOS phone, tablet, or simulator.
 
+## Package for Phone Testing
+
+See [PACKAGE.md](PACKAGE.md) for the current packaging notes. A real phone package requires DevEco Studio, HarmonyOS SDK tools, and signing/debug configuration.
+
 ## Manual Test Cases
 
 Prepare two local files on the device:
@@ -58,4 +62,3 @@ Then test:
 ## Notes
 
 This folder is intentionally separate from the Windows Tauri app. The shared product behavior is documented in the root README, but the mobile app uses native HarmonyOS APIs for file picking and ArkWeb rendering.
-
