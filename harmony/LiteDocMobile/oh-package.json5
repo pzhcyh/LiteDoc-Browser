@@ -1,0 +1,11 @@
+{
+  "name": "litedoc-mobile",
+  "version": "0.1.0",
+  "description": "LiteDoc Browser for HarmonyOS mobile devices.",
+  "main": "",
+  "author": "LiteDoc Browser",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}
+

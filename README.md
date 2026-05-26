@@ -2,7 +2,13 @@
 
 LiteDoc Browser is a lightweight desktop browser for opening local HTML and Markdown files.
 
-It is built for fast personal reading and light editing. The current version focuses on Windows desktop usage.
+It is built for fast personal reading and light editing. The current desktop version focuses on Windows usage.
+
+The HarmonyOS mobile prototype lives under:
+
+```text
+harmony/LiteDocMobile/
+```
 
 ## Features
 
@@ -49,6 +55,12 @@ Build the Windows desktop app and installers:
 npm run desktop:build
 ```
 
+Open the HarmonyOS mobile app in DevEco Studio:
+
+```text
+harmony/LiteDocMobile
+```
+
 ## Tech Stack
 
 - Tauri 2
@@ -57,6 +69,7 @@ npm run desktop:build
 - Marked
 - Mermaid
 - DOMPurify
+- HarmonyOS ArkTS / ArkUI / ArkWeb for the mobile prototype
 
 ## License
 

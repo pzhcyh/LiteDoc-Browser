@@ -1,0 +1,10 @@
+{
+  "name": "entry",
+  "version": "0.1.0",
+  "description": "LiteDoc Browser HarmonyOS entry module.",
+  "main": "",
+  "author": "LiteDoc Browser",
+  "license": "MIT",
+  "dependencies": {}
+}
+

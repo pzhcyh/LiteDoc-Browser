@@ -1,0 +1,17 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "LiteDoc Browser"
+    },
+    {
+      "name": "module_desc",
+      "value": "LiteDoc Browser mobile entry module"
+    },
+    {
+      "name": "ability_desc",
+      "value": "Open local HTML and Markdown files"
+    }
+  ]
+}
+
