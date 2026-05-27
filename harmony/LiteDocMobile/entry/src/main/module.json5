@@ -41,32 +41,44 @@
               {
                 "scheme": "file",
                 "type": "text/html",
-                "utd": "general.html"
+                "utd": "general.html",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               },
               {
                 "scheme": "file",
                 "type": "text/markdown",
-                "utd": "general.markdown"
+                "utd": "general.markdown",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               },
               {
                 "scheme": "file",
                 "type": "text/plain",
-                "utd": "general.plain-text"
+                "utd": "general.plain-text",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               },
               {
                 "scheme": "content",
                 "type": "text/html",
-                "utd": "general.html"
+                "utd": "general.html",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               },
               {
                 "scheme": "content",
                 "type": "text/markdown",
-                "utd": "general.markdown"
+                "utd": "general.markdown",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               },
               {
                 "scheme": "content",
                 "type": "text/plain",
-                "utd": "general.plain-text"
+                "utd": "general.plain-text",
+                "linkFeature": "FileOpen",
+                "maxFileSupported": 1
               }
             ]
           },
