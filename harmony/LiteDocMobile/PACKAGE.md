@@ -70,6 +70,8 @@ D:\LiteDocMobile-build-20260527.zip
 
 The current command-line build warns that no `signingConfigs` profile is configured. If a phone rejects the package, use DevEco Studio Run/Build with debug signing configured.
 
+If `ohpm install --all` fails with `@ohos/hamock` not found, remove test-only dependencies from the root `oh-package.json5`. This prototype does not use the HarmonyOS test libraries yet, so `devDependencies` can remain empty.
+
 ## Manual Test Checklist
 
 After installing the generated package on a Huawei phone:
