@@ -20,6 +20,8 @@ const SUPPORTED_EXTENSIONS: string[] = ['html', 'htm', 'md', 'markdown'];
 @Component
 struct Index {
   private webController: webview.WebviewController = new webview.WebviewController();
+  private isWebReady: boolean = false;
+  private pendingRender: boolean = false;
 
   @State private theme: AppTheme = 'dark';
   @State private currentDocument: LoadedDocument | null = null;
@@ -46,6 +48,10 @@ struct Index {
             .width('100%')
             .height('100%')
             .backgroundColor(this.getDocumentBackground())
+            .onControllerAttached(() => {
+              this.isWebReady = true;
+              this.renderWhenReady();
+            })
         } else {
           this.EmptyState()
         }
@@ -194,10 +200,24 @@ struct Index {
         content
       };
 
-      this.renderCurrentDocument();
+      this.pendingRender = true;
+      this.renderWhenReady();
       this.status = name;
     } catch (error) {
       this.status = `Unable to open file: ${this.toMessage(error)}`;
+    }
+  }
+
+  private renderWhenReady(): void {
+    if (!this.pendingRender || !this.isWebReady) {
+      return;
+    }
+
+    try {
+      this.renderCurrentDocument();
+      this.pendingRender = false;
+    } catch (error) {
+      this.status = `Unable to render file: ${this.toMessage(error)}`;
     }
   }
 
@@ -215,7 +235,8 @@ struct Index {
 
   private toggleTheme(): void {
     this.theme = this.theme === 'dark' ? 'light' : 'dark';
-    this.renderCurrentDocument();
+    this.pendingRender = true;
+    this.renderWhenReady();
   }
 
   private readTextFile(uri: string): string {
