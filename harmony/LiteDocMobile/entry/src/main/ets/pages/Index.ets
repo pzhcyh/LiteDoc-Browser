@@ -1,6 +1,7 @@
 import { webview } from '@kit.ArkWeb';
 import { picker, fileIo } from '@kit.CoreFileKit';
 import { util } from '@kit.ArkTS';
+import { OpenFileState } from '../common/OpenFileState';
 
 type AppTheme = 'dark' | 'light';
 type DocumentKind = 'html' | 'markdown';
@@ -24,6 +25,13 @@ struct Index {
   @State private currentDocument: LoadedDocument | null = null;
   @State private status: string = 'Ready';
   @State private isOpening: boolean = false;
+
+  aboutToAppear(): void {
+    const pending = OpenFileState.take();
+    if (pending.uri) {
+      this.loadDocumentFromUri(pending.uri, pending.type);
+    }
+  }
 
   build() {
     Column() {
@@ -142,7 +150,7 @@ struct Index {
     this.status = 'Opening...';
 
     try {
-      const documentPicker = new picker.DocumentViewPicker();
+      const documentPicker = new picker.DocumentViewPicker(getContext(this));
       const uris = await documentPicker.select({
         maxSelectNumber: 1,
         fileSuffixFilters: ['.html', '.htm', '.md', '.markdown']
@@ -154,16 +162,30 @@ struct Index {
       }
 
       const uri = uris[0];
-      const name = this.fileNameFromUri(uri);
-      const extension = this.extensionFromName(name);
+      this.loadDocumentFromUri(uri);
+    } catch (error) {
+      this.status = `Unable to open file: ${this.toMessage(error)}`;
+    } finally {
+      this.isOpening = false;
+    }
+  }
 
-      if (!SUPPORTED_EXTENSIONS.includes(extension)) {
+  private loadDocumentFromUri(uri: string, wantType: string = ''): void {
+    try {
+      const name = this.fileNameFromUri(uri);
+      let extension = this.extensionFromName(name);
+      const content = this.readTextFile(uri);
+      const kind = this.documentKind(extension, wantType, content);
+
+      if (!kind) {
         this.status = 'Only HTML and Markdown files are supported.';
         return;
       }
 
-      const content = this.readTextFile(uri);
-      const kind: DocumentKind = extension === 'md' || extension === 'markdown' ? 'markdown' : 'html';
+      if (!extension) {
+        extension = kind === 'markdown' ? 'md' : 'html';
+      }
+
       this.currentDocument = {
         uri,
         name,
@@ -176,8 +198,6 @@ struct Index {
       this.status = name;
     } catch (error) {
       this.status = `Unable to open file: ${this.toMessage(error)}`;
-    } finally {
-      this.isOpening = false;
     }
   }
 
@@ -462,6 +482,28 @@ code {
   private extensionFromName(name: string): string {
     const dot = name.lastIndexOf('.');
     return dot >= 0 ? name.slice(dot + 1).toLowerCase() : '';
+  }
+
+  private documentKind(extension: string, wantType: string, content: string): DocumentKind | null {
+    if (SUPPORTED_EXTENSIONS.includes(extension)) {
+      return extension === 'md' || extension === 'markdown' ? 'markdown' : 'html';
+    }
+
+    const type = wantType.toLowerCase();
+    if (type.includes('markdown')) {
+      return 'markdown';
+    }
+
+    if (type.includes('html')) {
+      return 'html';
+    }
+
+    const preview = content.trimStart().slice(0, 256).toLowerCase();
+    if (preview.startsWith('<!doctype html') || preview.startsWith('<html') || preview.includes('<body')) {
+      return 'html';
+    }
+
+    return 'markdown';
   }
 
   private escapeHtml(value: string): string {
