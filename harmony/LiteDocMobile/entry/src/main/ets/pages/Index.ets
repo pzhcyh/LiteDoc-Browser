@@ -22,6 +22,7 @@ struct Index {
   private webController: webview.WebviewController = new webview.WebviewController();
   private isWebReady: boolean = false;
   private pendingRender: boolean = false;
+  private renderTimer: number = -1;
 
   @State private theme: AppTheme = 'dark';
   @State private currentDocument: LoadedDocument | null = null;
@@ -42,7 +43,7 @@ struct Index {
       Stack() {
         if (this.currentDocument) {
           Web({
-            src: '',
+            src: 'about:blank',
             controller: this.webController
           })
             .width('100%')
@@ -213,6 +214,22 @@ struct Index {
       return;
     }
 
+    if (this.renderTimer >= 0) {
+      clearTimeout(this.renderTimer);
+    }
+
+    this.renderTimer = setTimeout(() => {
+      this.renderNow();
+    }, 80);
+  }
+
+  private renderNow(): void {
+    this.renderTimer = -1;
+
+    if (!this.pendingRender || !this.isWebReady) {
+      return;
+    }
+
     try {
       this.renderCurrentDocument();
       this.pendingRender = false;
@@ -230,7 +247,14 @@ struct Index {
       ? this.renderMarkdownDocument(this.currentDocument)
       : this.renderHtmlDocument(this.currentDocument);
 
-    this.webController.loadData(html, 'text/html', 'UTF-8');
+    this.webController.loadUrl(this.htmlDataUrl(html));
+  }
+
+  private htmlDataUrl(html: string): string {
+    const encoder = new util.TextEncoder();
+    const bytes = encoder.encodeInto(html);
+    const base64 = new util.Base64Helper().encodeToStringSync(bytes);
+    return `data:text/html;charset=utf-8;base64,${base64}`;
   }
 
   private toggleTheme(): void {
@@ -422,6 +446,7 @@ html {
 }
 body {
   margin: 0;
+  min-height: 100vh;
   padding: 18px;
   color: ${text};
   background: ${background};
