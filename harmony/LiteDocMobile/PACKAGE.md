@@ -72,6 +72,16 @@ The current command-line build warns that no `signingConfigs` profile is configu
 
 If `ohpm install --all` fails with `@ohos/hamock` not found, remove test-only dependencies from the root `oh-package.json5`. This prototype does not use the HarmonyOS test libraries yet, so `devDependencies` can remain empty.
 
+## One-Command Local Build Attempt
+
+This helper script syncs dependencies, builds the HAP, copies it to `release`, checks connected devices, and attempts installation:
+
+```powershell
+C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe -ExecutionPolicy Bypass -File D:\LiteDocMobile\build-and-install.ps1
+```
+
+If the install step fails with `no signature file`, configure debug signing in DevEco Studio and run the `entry` module from DevEco Studio.
+
 ## Manual Test Checklist
 
 After installing the generated package on a Huawei phone:
