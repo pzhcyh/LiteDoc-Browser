@@ -13,6 +13,15 @@ The current machine does not have these HarmonyOS build tools on `PATH`:
 
 HarmonyOS phone test packages also need signing. DevEco Studio can usually generate a debug signing setup after the SDK is installed and the device/emulator is configured.
 
+After DevEco Studio is installed, the bundled tools can be used directly:
+
+```powershell
+$env:NODE_HOME='D:\01_APP\HUAWEI coding\devecostudio\DevEco Studio\tools\node'
+$env:DEVECO_SDK_HOME='D:\01_APP\HUAWEI coding\devecostudio\DevEco Studio\sdk'
+$env:PATH="$env:NODE_HOME;$env:PATH"
+& 'D:\01_APP\HUAWEI coding\devecostudio\DevEco Studio\tools\hvigor\bin\hvigorw.bat' assembleApp --no-daemon
+```
+
 ## Build a Test Package in DevEco Studio
 
 1. Install DevEco Studio from Huawei Developer:
@@ -43,6 +52,23 @@ HarmonyOS phone test packages also need signing. DevEco Studio can usually gener
 6. Run the `entry` module once from DevEco Studio.
 
 7. To create a package for manual testing, use DevEco Studio's build/package action for the `entry` module. The generated package is normally written under the module's build output directory.
+
+Command-line build output from the path-safe copy:
+
+```text
+D:\LiteDocMobile\entry\build\default\outputs\default\app\entry-default.hap
+D:\LiteDocMobile\build\outputs\default\LiteDocMobile-default-unsigned.app
+```
+
+Convenience copies:
+
+```text
+D:\LiteDocMobile\release\LiteDocMobile-entry-default.hap
+D:\LiteDocMobile\release\LiteDocMobile-default-unsigned.app
+D:\LiteDocMobile-build-20260527.zip
+```
+
+The current command-line build warns that no `signingConfigs` profile is configured. If a phone rejects the package, use DevEco Studio Run/Build with debug signing configured.
 
 ## Manual Test Checklist
 

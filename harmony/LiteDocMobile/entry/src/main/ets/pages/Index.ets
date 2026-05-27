@@ -37,28 +37,28 @@ struct Index {
           })
             .width('100%')
             .height('100%')
-            .backgroundColor(this.documentBackground())
+            .backgroundColor(this.getDocumentBackground())
         } else {
           this.EmptyState()
         }
       }
       .layoutWeight(1)
       .width('100%')
-      .backgroundColor(this.backgroundColor())
+      .backgroundColor(this.getBackgroundColor())
 
       Text(this.status)
         .width('100%')
         .height(30)
         .padding({ left: 14, right: 14 })
         .fontSize(12)
-        .fontColor(this.secondaryTextColor())
-        .backgroundColor(this.surfaceColor())
+        .fontColor(this.getSecondaryTextColor())
+        .backgroundColor(this.getSurfaceColor())
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .maxLines(1)
     }
     .width('100%')
     .height('100%')
-    .backgroundColor(this.backgroundColor())
+    .backgroundColor(this.getBackgroundColor())
   }
 
   @Builder
@@ -68,8 +68,8 @@ struct Index {
         .enabled(!this.isOpening)
         .height(36)
         .fontSize(14)
-        .backgroundColor(this.buttonColor())
-        .fontColor(this.primaryTextColor())
+        .backgroundColor(this.getButtonColor())
+        .fontColor(this.getPrimaryTextColor())
         .borderRadius(8)
         .onClick(() => {
           this.openDocument();
@@ -79,7 +79,7 @@ struct Index {
         .layoutWeight(1)
         .fontSize(15)
         .fontWeight(FontWeight.Medium)
-        .fontColor(this.primaryTextColor())
+        .fontColor(this.getPrimaryTextColor())
         .textAlign(TextAlign.Center)
         .textOverflow({ overflow: TextOverflow.Ellipsis })
         .maxLines(1)
@@ -88,8 +88,8 @@ struct Index {
       Button(this.theme === 'dark' ? 'Light' : 'Dark')
         .height(36)
         .fontSize(14)
-        .backgroundColor(this.buttonColor())
-        .fontColor(this.primaryTextColor())
+        .backgroundColor(this.getButtonColor())
+        .fontColor(this.getPrimaryTextColor())
         .borderRadius(8)
         .onClick(() => {
           this.toggleTheme();
@@ -98,7 +98,7 @@ struct Index {
     .width('100%')
     .height(56)
     .padding({ left: 12, right: 12 })
-    .backgroundColor(this.surfaceColor())
+    .backgroundColor(this.getSurfaceColor())
   }
 
   @Builder
@@ -107,12 +107,12 @@ struct Index {
       Text('Open a local HTML or Markdown file')
         .fontSize(20)
         .fontWeight(FontWeight.Bold)
-        .fontColor(this.primaryTextColor())
+        .fontColor(this.getPrimaryTextColor())
         .textAlign(TextAlign.Center)
 
       Text('Supports .html, .htm, .md, and .markdown')
         .fontSize(14)
-        .fontColor(this.secondaryTextColor())
+        .fontColor(this.getSecondaryTextColor())
         .textAlign(TextAlign.Center)
         .margin({ top: 8 })
 
@@ -477,7 +477,7 @@ code {
     return this.escapeHtml(value).replace(/`/g, '&#96;');
   }
 
-  private toMessage(error: unknown): string {
+  private toMessage(error: Error | string | number | boolean | object | null | undefined): string {
     if (error instanceof Error) {
       return error.message;
     }
@@ -485,28 +485,27 @@ code {
     return String(error);
   }
 
-  private backgroundColor(): string {
+  private getBackgroundColor(): string {
     return this.theme === 'dark' ? '#15181D' : '#F5F7F8';
   }
 
-  private surfaceColor(): string {
+  private getSurfaceColor(): string {
     return this.theme === 'dark' ? '#1B2027' : '#FFFFFF';
   }
 
-  private buttonColor(): string {
+  private getButtonColor(): string {
     return this.theme === 'dark' ? '#20262E' : '#EEF2F4';
   }
 
-  private documentBackground(): string {
+  private getDocumentBackground(): string {
     return this.theme === 'dark' ? '#15181D' : '#FFFFFF';
   }
 
-  private primaryTextColor(): string {
+  private getPrimaryTextColor(): string {
     return this.theme === 'dark' ? '#F2F4F6' : '#20242B';
   }
 
-  private secondaryTextColor(): string {
+  private getSecondaryTextColor(): string {
     return this.theme === 'dark' ? '#AAB1BC' : '#66717F';
   }
 }
-
