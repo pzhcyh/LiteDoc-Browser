@@ -47,13 +47,17 @@ LiteDoc Browser 仅在用户主动选择或通过系统“打开方式”传入�
 
 ## 隐私政策链接
 
-待发布到公开 URL 后填写。草稿见：
+建议填写：
 
 ```text
-docs/appgallery/privacy-policy.md
+https://github.com/pzhcyh/LiteDoc-Browser/blob/main/docs/appgallery/privacy-policy.md
 ```
 
-建议后续通过 GitHub Pages 或个人网站发布为网页链接。
+开发者主页/联系方式：
+
+```text
+https://github.com/pzhcyh
+```
 
 ## 截图建议
 
