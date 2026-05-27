@@ -24,8 +24,10 @@ HarmonyOS phone test packages also need signing. DevEco Studio can usually gener
 2. Open this folder:
 
    ```text
-   D:\05_Coding\Coding Program\Codex Program\06.Tools\LiteDoc Browser\harmony\LiteDocMobile
+   D:\LiteDocMobile
    ```
+
+   DevEco Studio rejects project paths that contain spaces, Chinese characters, or other unsupported characters. Do not open the project from the repository path if it contains directories such as `Coding Program`. Use a short ASCII path such as `D:\LiteDocMobile`.
 
 3. Let DevEco Studio install or sync:
 
@@ -63,3 +65,14 @@ If DevEco Studio is not installed on this machine, send this source package to a
 D:\05_Coding\Coding Program\Codex Program\06.Tools\LiteDoc Browser\release\LiteDocMobile-HarmonyOS-source-20260527.zip
 ```
 
+Path-safe working copy:
+
+```text
+D:\LiteDocMobile
+```
+
+Path-safe source package:
+
+```text
+D:\LiteDocMobile_20260527.zip
+```

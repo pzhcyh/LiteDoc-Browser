@@ -28,8 +28,10 @@ Not included yet:
 2. Open this folder in DevEco Studio:
 
    ```text
-   harmony/LiteDocMobile
+   D:\LiteDocMobile
    ```
+
+   DevEco Studio requires a path made from ASCII letters, numbers, dots, underscores, and hyphens. If the repository path contains spaces or Chinese characters, copy `harmony/LiteDocMobile` to `D:\LiteDocMobile` first.
 
 3. Let DevEco Studio install or sync the matching HarmonyOS SDK and build tools.
 
