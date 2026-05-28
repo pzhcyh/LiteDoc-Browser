@@ -1,7 +1,7 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "LiteDoc Browser",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "identifier": "com.local.litedoc-browser",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -33,7 +33,7 @@
     "icon": ["icons/icon.ico"],
     "fileAssociations": [
       {
-        "ext": ["md", "markdown", "html", "htm"],
+        "ext": ["md", "markdown", "html", "htm", "txt", "text"],
         "name": "LiteDoc Browser Document",
         "description": "Open with LiteDoc Browser"
       }

@@ -11,15 +11,23 @@ type FileDocument = {
   base_url: string;
 };
 
+type DocumentTab = FileDocument & {
+  id: string;
+  dirty: boolean;
+  mode: ViewMode;
+};
+
 type ViewMode = "preview" | "edit";
 type Theme = "light" | "dark";
 
-let currentFile: FileDocument | null = null;
-let mode: ViewMode = "preview";
+const supportedExtensions = ["html", "htm", "md", "markdown", "txt", "text"];
+
+let tabs: DocumentTab[] = [];
+let activeTabId: string | null = null;
 let theme: Theme = (localStorage.getItem("theme") as Theme) || "dark";
-let dirty = false;
 let mermaidRenderer: typeof import("mermaid").default | null = null;
 let htmlObjectUrl: string | null = null;
+let untitledCount = 1;
 
 const app = document.querySelector<HTMLDivElement>("#app");
 
@@ -32,7 +40,10 @@ app.innerHTML = `
     <header class="toolbar">
       <div class="toolbar-group">
         <button id="open-button" type="button">Open</button>
+        <button id="new-md-button" type="button">New MD</button>
+        <button id="new-text-button" type="button">New Text</button>
         <button id="save-button" type="button" disabled>Save</button>
+        <button id="save-as-button" type="button" disabled>Save As</button>
         <button id="mode-button" type="button" disabled>Edit</button>
       </div>
       <div id="file-title" class="file-title">No file open</div>
@@ -40,10 +51,11 @@ app.innerHTML = `
         <button id="theme-button" type="button">Dark</button>
       </div>
     </header>
+    <nav id="tab-bar" class="tab-bar" aria-label="Open documents"></nav>
     <section id="drop-zone" class="workspace">
       <div id="empty-state" class="empty-state">
-        <strong>Open a local HTML or Markdown file</strong>
-        <span>Use Open, drag a file here, or launch LiteDoc with a file path.</span>
+        <strong>Open or create a local document</strong>
+        <span>Use Open, New MD, New Text, drag a file here, or launch LiteDoc with a file path.</span>
       </div>
       <div id="viewer" class="viewer" hidden></div>
       <textarea id="editor" class="editor" spellcheck="false" hidden></textarea>
@@ -55,10 +67,14 @@ app.innerHTML = `
 `;
 
 const openButton = getElement<HTMLButtonElement>("open-button");
+const newMdButton = getElement<HTMLButtonElement>("new-md-button");
+const newTextButton = getElement<HTMLButtonElement>("new-text-button");
 const saveButton = getElement<HTMLButtonElement>("save-button");
+const saveAsButton = getElement<HTMLButtonElement>("save-as-button");
 const modeButton = getElement<HTMLButtonElement>("mode-button");
 const themeButton = getElement<HTMLButtonElement>("theme-button");
 const fileTitle = getElement<HTMLDivElement>("file-title");
+const tabBar = getElement<HTMLElement>("tab-bar");
 const dropZone = getElement<HTMLElement>("drop-zone");
 const emptyState = getElement<HTMLDivElement>("empty-state");
 const viewer = getElement<HTMLDivElement>("viewer");
@@ -68,14 +84,19 @@ const status = getElement<HTMLSpanElement>("status");
 applyTheme();
 
 openButton.addEventListener("click", openFile);
+newMdButton.addEventListener("click", () => newDocument("md"));
+newTextButton.addEventListener("click", () => newDocument("txt"));
 saveButton.addEventListener("click", saveFile);
+saveAsButton.addEventListener("click", saveFileAs);
 modeButton.addEventListener("click", toggleMode);
 themeButton.addEventListener("click", toggleTheme);
 
 editor.addEventListener("input", () => {
-  if (!currentFile) return;
-  currentFile.content = editor.value;
-  dirty = true;
+  const tab = getActiveTab();
+  if (!tab) return;
+
+  tab.content = editor.value;
+  tab.dirty = true;
   updateChrome();
 });
 
@@ -95,21 +116,24 @@ dropZone.addEventListener("drop", async (event) => {
   const file = event.dataTransfer?.files.item(0);
   if (!file) return;
 
-  const extension = file.name.split(".").pop()?.toLowerCase() || "";
-  if (!["html", "htm", "md", "markdown"].includes(extension)) {
-    setStatus("Only HTML and Markdown files are supported.");
+  const extension = getExtension(file.name);
+  if (!isSupportedExtension(extension)) {
+    setStatus("Only HTML, Markdown, and text files are supported.");
     return;
   }
 
   const content = await file.text();
-  await loadFile({
-    path: "",
-    name: file.name,
-    extension,
-    content,
-    base_url: "",
-  });
-  setStatus("Opened dropped file. Use Open for save-back support.");
+  await addTab(
+    {
+      path: "",
+      name: file.name,
+      extension,
+      content,
+      base_url: "",
+    },
+    { dirty: false, mode: "preview" },
+  );
+  setStatus("Opened dropped file. Use Save As to save changes.");
 });
 
 window.addEventListener("keydown", async (event) => {
@@ -118,9 +142,18 @@ window.addEventListener("keydown", async (event) => {
     await openFile();
   }
 
+  if (event.ctrlKey && event.key.toLowerCase() === "n") {
+    event.preventDefault();
+    newDocument(event.shiftKey ? "txt" : "md");
+  }
+
   if (event.ctrlKey && event.key.toLowerCase() === "s") {
     event.preventDefault();
-    await saveFile();
+    if (event.shiftKey) {
+      await saveFileAs();
+    } else {
+      await saveFile();
+    }
   }
 
   if (event.ctrlKey && event.key.toLowerCase() === "e") {
@@ -129,13 +162,21 @@ window.addEventListener("keydown", async (event) => {
   }
 });
 
+window.addEventListener("beforeunload", (event) => {
+  if (!tabs.some((tab) => tab.dirty)) return;
+
+  event.preventDefault();
+  event.returnValue = "";
+});
+
 void openStartupFile();
+updateChrome();
 
 async function openStartupFile() {
   try {
     const file = await invoke<FileDocument | null>("open_startup_file");
     if (file) {
-      await loadFile(file);
+      await addTab(file, { dirty: false, mode: "preview" });
     }
   } catch (error) {
     setStatus(toMessage(error));
@@ -146,36 +187,111 @@ async function openFile() {
   try {
     const file = await invoke<FileDocument | null>("open_file_dialog");
     if (file) {
-      await loadFile(file);
+      await addTab(file, { dirty: false, mode: "preview" });
     }
   } catch (error) {
     setStatus(toMessage(error));
   }
 }
 
-async function loadFile(file: FileDocument) {
-  currentFile = file;
-  mode = "preview";
-  dirty = false;
-  editor.value = file.content;
+function newDocument(extension: "md" | "txt") {
+  const count = untitledCount++;
+  const content = extension === "md" ? "# Untitled\n\n" : "";
+  const name = `Untitled-${count}.${extension}`;
+
+  void addTab(
+    {
+      path: "",
+      name,
+      extension,
+      content,
+      base_url: "",
+    },
+    { dirty: true, mode: "edit" },
+  );
+  setStatus(`Created ${name}`);
+}
+
+async function addTab(
+  file: FileDocument,
+  options: Pick<DocumentTab, "dirty" | "mode">,
+) {
+  if (file.path) {
+    const existing = tabs.find((tab) => tab.path === file.path);
+    if (existing) {
+      activeTabId = existing.id;
+      await render();
+      updateChrome();
+      setStatus(existing.path);
+      return;
+    }
+  }
+
+  const tab: DocumentTab = {
+    ...file,
+    id: createTabId(),
+    dirty: options.dirty,
+    mode: options.mode,
+  };
+
+  tabs.push(tab);
+  activeTabId = tab.id;
   await render();
   updateChrome();
   setStatus(file.path || file.name);
 }
 
 async function saveFile() {
-  if (!currentFile || !currentFile.path) {
-    setStatus("Open a file with the Open button before saving.");
+  const tab = getActiveTab();
+  if (!tab) return;
+
+  if (!tab.path) {
+    await saveFileAs();
+    return;
+  }
+
+  if (!tab.dirty) {
+    setStatus("No changes to save.");
     return;
   }
 
   try {
     await invoke("save_file", {
-      path: currentFile.path,
-      content: currentFile.content,
+      path: tab.path,
+      content: tab.content,
     });
-    dirty = false;
+    tab.dirty = false;
     updateChrome();
+    if (tab.mode === "preview" && isHtml(tab)) {
+      await render();
+    }
+    setStatus("Saved.");
+  } catch (error) {
+    setStatus(toMessage(error));
+  }
+}
+
+async function saveFileAs() {
+  const tab = getActiveTab();
+  if (!tab) return;
+
+  try {
+    const saved = await invoke<FileDocument | null>("save_file_dialog", {
+      suggestedName: tab.name,
+      extension: tab.extension,
+      content: tab.content,
+    });
+
+    if (!saved) return;
+
+    tab.path = saved.path;
+    tab.name = saved.name;
+    tab.extension = saved.extension;
+    tab.content = saved.content;
+    tab.base_url = saved.base_url;
+    tab.dirty = false;
+    updateChrome();
+    await render();
     setStatus("Saved.");
   } catch (error) {
     setStatus(toMessage(error));
@@ -183,9 +299,10 @@ async function saveFile() {
 }
 
 function toggleMode() {
-  if (!currentFile) return;
+  const tab = getActiveTab();
+  if (!tab) return;
 
-  mode = mode === "preview" ? "edit" : "preview";
+  tab.mode = tab.mode === "preview" ? "edit" : "preview";
   void render();
   updateChrome();
 }
@@ -195,66 +312,148 @@ function toggleTheme() {
   localStorage.setItem("theme", theme);
   applyTheme();
 
-  if (currentFile && mode === "preview" && isMarkdown(currentFile)) {
+  const tab = getActiveTab();
+  if (tab && tab.mode === "preview" && isMarkdown(tab)) {
     void render();
   }
 }
 
+async function activateTab(id: string) {
+  if (activeTabId === id) return;
+
+  activeTabId = id;
+  await render();
+  updateChrome();
+}
+
+async function closeTab(id: string) {
+  const tab = tabs.find((item) => item.id === id);
+  if (!tab) return;
+
+  if (tab.dirty && !confirm(`Close ${tab.name} without saving?`)) {
+    return;
+  }
+
+  const index = tabs.findIndex((item) => item.id === id);
+  tabs = tabs.filter((item) => item.id !== id);
+
+  if (activeTabId === id) {
+    activeTabId = tabs[Math.max(0, index - 1)]?.id ?? null;
+  }
+
+  await render();
+  updateChrome();
+  setStatus(tab.dirty ? "Closed without saving." : "Closed.");
+}
+
 async function render() {
-  emptyState.hidden = Boolean(currentFile);
-  viewer.hidden = !currentFile || mode !== "preview";
-  editor.hidden = !currentFile || mode !== "edit";
+  const tab = getActiveTab();
+  renderTabs();
 
-  if (!currentFile) return;
+  emptyState.hidden = Boolean(tab);
+  viewer.hidden = !tab || tab.mode !== "preview";
+  editor.hidden = !tab || tab.mode !== "edit";
 
-  if (mode === "edit") {
+  if (!tab) {
+    clearHtmlObjectUrl();
+    return;
+  }
+
+  if (tab.mode === "edit") {
+    clearHtmlObjectUrl();
+    editor.value = tab.content;
     editor.focus();
     return;
   }
 
-  if (isMarkdown(currentFile)) {
-    await renderMarkdown(currentFile);
+  if (isMarkdown(tab)) {
+    await renderMarkdown(tab);
+  } else if (isHtml(tab)) {
+    renderHtml(tab);
   } else {
-    renderHtml(currentFile);
+    renderPlainText(tab);
   }
 }
 
-async function renderMarkdown(file: FileDocument) {
+function renderTabs() {
+  tabBar.replaceChildren(
+    ...tabs.map((tab) => {
+      const item = document.createElement("div");
+      item.className = "tab-item";
+      if (tab.id === activeTabId) {
+        item.classList.add("is-active");
+      }
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "tab-button";
+      button.title = tab.path || tab.name;
+      button.textContent = `${tab.name}${tab.dirty ? " *" : ""}`;
+      button.addEventListener("click", () => {
+        void activateTab(tab.id);
+      });
+
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "tab-close";
+      close.title = `Close ${tab.name}`;
+      close.textContent = "x";
+      close.addEventListener("click", (event) => {
+        event.stopPropagation();
+        void closeTab(tab.id);
+      });
+
+      item.append(button, close);
+      return item;
+    }),
+  );
+}
+
+async function renderMarkdown(tab: DocumentTab) {
+  clearHtmlObjectUrl();
   viewer.classList.remove("is-html");
   viewer.style.removeProperty("background");
   viewer.style.removeProperty("padding");
-  const parsed = await marked.parse(file.content, {
+  const parsed = await marked.parse(tab.content, {
     async: false,
     gfm: true,
   });
   viewer.innerHTML = DOMPurify.sanitize(parsed);
-  rewriteRelativeUrls(viewer, file.base_url);
+  rewriteRelativeUrls(viewer, tab.base_url);
   await renderMermaidBlocks();
 }
 
-function renderHtml(file: FileDocument) {
+function renderPlainText(tab: DocumentTab) {
+  clearHtmlObjectUrl();
+  viewer.classList.remove("is-html");
+  viewer.style.removeProperty("background");
+  viewer.style.removeProperty("padding");
+
+  const pre = document.createElement("pre");
+  pre.className = "plain-text";
+  pre.textContent = tab.content || "";
+  viewer.replaceChildren(pre);
+}
+
+function renderHtml(tab: DocumentTab) {
+  clearHtmlObjectUrl();
   viewer.classList.add("is-html");
   viewer.style.background = "#ffffff";
   viewer.style.padding = "0";
-
-  if (htmlObjectUrl) {
-    URL.revokeObjectURL(htmlObjectUrl);
-    htmlObjectUrl = null;
-  }
 
   const iframe = document.createElement("iframe");
   iframe.className = "html-frame";
   iframe.setAttribute(
     "sandbox",
-    "allow-downloads allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
+    "allow-downloads allow-forms allow-modals allow-popups allow-same-origin allow-scripts",
   );
-  iframe.src = file.path ? convertFileSrc(file.path) : createHtmlObjectUrl(file);
+  iframe.src = tab.path && !tab.dirty ? convertFileSrc(tab.path) : createHtmlObjectUrl(tab);
   viewer.replaceChildren(iframe);
 }
 
 async function renderMermaidBlocks() {
   const blocks = Array.from(
-    viewer.querySelectorAll<HTMLElement>("pre > code[class*='language-mermaid']")
+    viewer.querySelectorAll<HTMLElement>("pre > code[class*='language-mermaid']"),
   );
 
   if (blocks.length === 0) return;
@@ -326,13 +525,20 @@ function rewriteRelativeUrls(root: ParentNode, baseUrl: string) {
   });
 }
 
-function createHtmlObjectUrl(file: FileDocument) {
+function createHtmlObjectUrl(tab: DocumentTab) {
   htmlObjectUrl = URL.createObjectURL(
-    new Blob([injectBaseUrl(file.content, file.base_url)], {
+    new Blob([injectBaseUrl(tab.content, tab.base_url)], {
       type: "text/html;charset=utf-8",
-    })
+    }),
   );
   return htmlObjectUrl;
+}
+
+function clearHtmlObjectUrl() {
+  if (!htmlObjectUrl) return;
+
+  URL.revokeObjectURL(htmlObjectUrl);
+  htmlObjectUrl = null;
 }
 
 function injectBaseUrl(html: string, baseUrl: string) {
@@ -356,12 +562,15 @@ function resolveDocumentUrl(value: string, baseUrl: string) {
 }
 
 function updateChrome() {
-  const fileName = currentFile ? `${currentFile.name}${dirty ? " *" : ""}` : "No file open";
+  const tab = getActiveTab();
+  const fileName = tab ? `${tab.name}${tab.dirty ? " *" : ""}` : "No file open";
   fileTitle.textContent = fileName;
-  document.title = currentFile ? `${fileName} - LiteDoc Browser` : "LiteDoc Browser";
-  saveButton.disabled = !currentFile || !currentFile.path || !dirty;
-  modeButton.disabled = !currentFile;
-  modeButton.textContent = mode === "preview" ? "Edit" : "Preview";
+  fileTitle.title = tab?.path || fileName;
+  document.title = tab ? `${fileName} - LiteDoc Browser` : "LiteDoc Browser";
+  saveButton.disabled = !tab || !tab.dirty;
+  saveAsButton.disabled = !tab;
+  modeButton.disabled = !tab;
+  modeButton.textContent = tab?.mode === "edit" ? "Preview" : "Edit";
 }
 
 function applyTheme() {
@@ -369,8 +578,24 @@ function applyTheme() {
   themeButton.textContent = theme === "light" ? "Dark" : "Light";
 }
 
+function getActiveTab() {
+  return tabs.find((tab) => tab.id === activeTabId) ?? null;
+}
+
 function isMarkdown(file: FileDocument) {
   return file.extension === "md" || file.extension === "markdown";
+}
+
+function isHtml(file: FileDocument) {
+  return file.extension === "html" || file.extension === "htm";
+}
+
+function isSupportedExtension(extension: string) {
+  return supportedExtensions.includes(extension);
+}
+
+function getExtension(name: string) {
+  return name.split(".").pop()?.toLowerCase() || "";
 }
 
 function isRelativeUrl(value: string) {
@@ -388,6 +613,14 @@ function fileUrlToPath(url: URL) {
 
 function escapeAttribute(value: string) {
   return value.replace(/&/g, "&amp;").replace(/"/g, "&quot;");
+}
+
+function createTabId() {
+  if ("randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
 function setStatus(message: string) {

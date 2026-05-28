@@ -36,6 +36,7 @@ button {
   background: #ffffff;
   font: inherit;
   cursor: pointer;
+  white-space: nowrap;
 }
 
 button:hover:not(:disabled) {
@@ -60,7 +61,7 @@ button:disabled {
 
 .shell {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
   width: 100vw;
   height: 100vh;
 }
@@ -75,7 +76,7 @@ button:disabled {
 }
 
 .toolbar {
-  height: 48px;
+  height: 52px;
   padding: 8px 12px;
   border-bottom: 1px solid #d7dce2;
 }
@@ -117,6 +118,76 @@ button:disabled {
 
 :root[data-theme="dark"] .file-title {
   color: #d8dce3;
+}
+
+.tab-bar {
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+  min-height: 38px;
+  overflow-x: auto;
+  padding: 6px 10px 0;
+  border-bottom: 1px solid #d7dce2;
+  background: #eef1f4;
+}
+
+:root[data-theme="dark"] .tab-bar {
+  border-color: #303741;
+  background: #171c22;
+}
+
+.tab-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 28px;
+  flex: 0 0 clamp(160px, 24vw, 280px);
+  height: 32px;
+  overflow: hidden;
+  border: 1px solid #cbd2da;
+  border-bottom: 0;
+  border-radius: 7px 7px 0 0;
+  background: #f9fafb;
+}
+
+:root[data-theme="dark"] .tab-item {
+  border-color: #303741;
+  background: #20262e;
+}
+
+.tab-item.is-active {
+  background: #ffffff;
+}
+
+:root[data-theme="dark"] .tab-item.is-active {
+  background: #15181d;
+}
+
+.tab-button,
+.tab-close {
+  min-width: 0;
+  height: 31px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.tab-button {
+  overflow: hidden;
+  padding: 0 8px 0 10px;
+  text-align: left;
+  text-overflow: ellipsis;
+}
+
+.tab-close {
+  width: 28px;
+  padding: 0;
+  color: #66717f;
+}
+
+.tab-button:hover:not(:disabled),
+.tab-close:hover:not(:disabled),
+:root[data-theme="dark"] .tab-button:hover:not(:disabled),
+:root[data-theme="dark"] .tab-close:hover:not(:disabled) {
+  background: rgba(75, 143, 119, 0.14);
 }
 
 .workspace {
@@ -203,6 +274,13 @@ button:disabled {
 :root[data-theme="dark"] .viewer pre {
   border-color: #303741;
   background: #1b2027;
+}
+
+.plain-text {
+  min-height: 100%;
+  margin: 0;
+  white-space: pre-wrap;
+  word-break: break-word;
 }
 
 .viewer code {

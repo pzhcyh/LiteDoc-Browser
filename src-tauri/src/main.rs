@@ -2,7 +2,10 @@
 
 use rfd::FileDialog;
 use serde::Serialize;
-use std::{env, fs, path::Path};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 use url::Url;
 
 #[derive(Serialize)]
@@ -21,8 +24,11 @@ fn read_document(path: &Path) -> Result<FileDocument, String> {
         .unwrap_or_default()
         .to_lowercase();
 
-    if !matches!(extension.as_str(), "html" | "htm" | "md" | "markdown") {
-        return Err("Only HTML and Markdown files are supported.".to_string());
+    if !matches!(
+        extension.as_str(),
+        "html" | "htm" | "md" | "markdown" | "txt" | "text"
+    ) {
+        return Err("Only HTML, Markdown, and text files are supported.".to_string());
     }
 
     let content = fs::read_to_string(path).map_err(|error| error.to_string())?;
@@ -49,7 +55,10 @@ fn read_document(path: &Path) -> Result<FileDocument, String> {
 #[tauri::command]
 fn open_file_dialog() -> Result<Option<FileDocument>, String> {
     let file = FileDialog::new()
-        .add_filter("Documents", &["html", "htm", "md", "markdown"])
+        .add_filter(
+            "Documents",
+            &["html", "htm", "md", "markdown", "txt", "text"],
+        )
         .pick_file();
 
     match file {
@@ -74,12 +83,53 @@ fn save_file(path: String, content: String) -> Result<(), String> {
     fs::write(path, content).map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+fn save_file_dialog(
+    suggested_name: String,
+    extension: String,
+    content: String,
+) -> Result<Option<FileDocument>, String> {
+    let file = FileDialog::new()
+        .add_filter("Markdown", &["md", "markdown"])
+        .add_filter("Text", &["txt", "text"])
+        .add_filter("HTML", &["html", "htm"])
+        .set_file_name(suggested_name)
+        .save_file();
+
+    match file {
+        Some(path) => {
+            let path = with_default_extension(path, &extension);
+            fs::write(&path, content).map_err(|error| error.to_string())?;
+            read_document(&path).map(Some)
+        }
+        None => Ok(None),
+    }
+}
+
+fn with_default_extension(mut path: PathBuf, extension: &str) -> PathBuf {
+    if path.extension().is_some() {
+        return path;
+    }
+
+    let extension = match extension {
+        "markdown" => "md",
+        "text" => "txt",
+        "htm" => "html",
+        "html" | "md" | "txt" => extension,
+        _ => "md",
+    };
+
+    path.set_extension(extension);
+    path
+}
+
 pub fn run() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             open_file_dialog,
             open_startup_file,
-            save_file
+            save_file,
+            save_file_dialog
         ])
         .run(tauri::generate_context!())
         .expect("error while running LiteDoc Browser");
