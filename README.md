@@ -14,10 +14,11 @@ harmony/LiteDocMobile/
 
 - Open local `.html`, `.htm`, `.md`, `.markdown`, `.txt`, and `.text` files
 - Use multiple document tabs in one window
-- Create new Markdown or text documents
+- Create new Markdown documents
 - Preview HTML files in an isolated frame
 - Render Markdown with GitHub-flavored Markdown support
 - Render Mermaid code blocks in Markdown
+- Preview Markdown while editing
 - Toggle light and dark mode, with dark mode as the default
 - Edit, save, and Save As local files
 - Drag and drop files into the window

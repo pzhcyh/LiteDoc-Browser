@@ -197,6 +197,11 @@ button:disabled {
   background: #f5f7f8;
 }
 
+.workspace.is-markdown-edit {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
 :root[data-theme="dark"] .workspace {
   background: #15181d;
 }
@@ -317,6 +322,22 @@ button:disabled {
 
 :root[data-theme="dark"] .editor {
   background: #15181d;
+}
+
+.workspace.is-markdown-edit .editor {
+  border-right: 1px solid #d7dce2;
+}
+
+:root[data-theme="dark"] .workspace.is-markdown-edit .editor {
+  border-color: #303741;
+}
+
+.live-preview {
+  border-left: 1px solid #d7dce2;
+}
+
+:root[data-theme="dark"] .live-preview {
+  border-color: #303741;
 }
 
 .mermaid-block {

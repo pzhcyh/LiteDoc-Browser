@@ -41,7 +41,6 @@ app.innerHTML = `
       <div class="toolbar-group">
         <button id="open-button" type="button">Open</button>
         <button id="new-md-button" type="button">New MD</button>
-        <button id="new-text-button" type="button">New Text</button>
         <button id="save-button" type="button" disabled>Save</button>
         <button id="save-as-button" type="button" disabled>Save As</button>
         <button id="mode-button" type="button" disabled>Edit</button>
@@ -55,10 +54,11 @@ app.innerHTML = `
     <section id="drop-zone" class="workspace">
       <div id="empty-state" class="empty-state">
         <strong>Open or create a local document</strong>
-        <span>Use Open, New MD, New Text, drag a file here, or launch LiteDoc with a file path.</span>
+        <span>Use Open, New MD, drag a file here, or launch LiteDoc with a file path.</span>
       </div>
       <div id="viewer" class="viewer" hidden></div>
       <textarea id="editor" class="editor" spellcheck="false" hidden></textarea>
+      <div id="live-preview" class="viewer live-preview" hidden></div>
     </section>
     <footer class="statusbar">
       <span id="status">Ready</span>
@@ -68,7 +68,6 @@ app.innerHTML = `
 
 const openButton = getElement<HTMLButtonElement>("open-button");
 const newMdButton = getElement<HTMLButtonElement>("new-md-button");
-const newTextButton = getElement<HTMLButtonElement>("new-text-button");
 const saveButton = getElement<HTMLButtonElement>("save-button");
 const saveAsButton = getElement<HTMLButtonElement>("save-as-button");
 const modeButton = getElement<HTMLButtonElement>("mode-button");
@@ -79,13 +78,13 @@ const dropZone = getElement<HTMLElement>("drop-zone");
 const emptyState = getElement<HTMLDivElement>("empty-state");
 const viewer = getElement<HTMLDivElement>("viewer");
 const editor = getElement<HTMLTextAreaElement>("editor");
+const livePreview = getElement<HTMLDivElement>("live-preview");
 const status = getElement<HTMLSpanElement>("status");
 
 applyTheme();
 
 openButton.addEventListener("click", openFile);
-newMdButton.addEventListener("click", () => newDocument("md"));
-newTextButton.addEventListener("click", () => newDocument("txt"));
+newMdButton.addEventListener("click", newDocument);
 saveButton.addEventListener("click", saveFile);
 saveAsButton.addEventListener("click", saveFileAs);
 modeButton.addEventListener("click", toggleMode);
@@ -98,6 +97,9 @@ editor.addEventListener("input", () => {
   tab.content = editor.value;
   tab.dirty = true;
   updateChrome();
+  if (tab.mode === "edit" && isMarkdown(tab)) {
+    void renderMarkdown(tab, livePreview);
+  }
 });
 
 dropZone.addEventListener("dragover", (event) => {
@@ -144,7 +146,7 @@ window.addEventListener("keydown", async (event) => {
 
   if (event.ctrlKey && event.key.toLowerCase() === "n") {
     event.preventDefault();
-    newDocument(event.shiftKey ? "txt" : "md");
+    newDocument();
   }
 
   if (event.ctrlKey && event.key.toLowerCase() === "s") {
@@ -194,16 +196,16 @@ async function openFile() {
   }
 }
 
-function newDocument(extension: "md" | "txt") {
+function newDocument() {
   const count = untitledCount++;
-  const content = extension === "md" ? "# Untitled\n\n" : "";
-  const name = `Untitled-${count}.${extension}`;
+  const content = "# Untitled\n\n";
+  const name = `Untitled-${count}.md`;
 
   void addTab(
     {
       path: "",
       name,
-      extension,
+      extension: "md",
       content,
       base_url: "",
     },
@@ -350,9 +352,11 @@ async function render() {
   const tab = getActiveTab();
   renderTabs();
 
+  dropZone.classList.toggle("is-markdown-edit", Boolean(tab && tab.mode === "edit" && isMarkdown(tab)));
   emptyState.hidden = Boolean(tab);
   viewer.hidden = !tab || tab.mode !== "preview";
   editor.hidden = !tab || tab.mode !== "edit";
+  livePreview.hidden = !tab || tab.mode !== "edit" || !isMarkdown(tab);
 
   if (!tab) {
     clearHtmlObjectUrl();
@@ -362,12 +366,15 @@ async function render() {
   if (tab.mode === "edit") {
     clearHtmlObjectUrl();
     editor.value = tab.content;
+    if (isMarkdown(tab)) {
+      await renderMarkdown(tab, livePreview);
+    }
     editor.focus();
     return;
   }
 
   if (isMarkdown(tab)) {
-    await renderMarkdown(tab);
+    await renderMarkdown(tab, viewer);
   } else if (isHtml(tab)) {
     renderHtml(tab);
   } else {
@@ -409,18 +416,18 @@ function renderTabs() {
   );
 }
 
-async function renderMarkdown(tab: DocumentTab) {
+async function renderMarkdown(tab: DocumentTab, target: HTMLElement) {
   clearHtmlObjectUrl();
-  viewer.classList.remove("is-html");
-  viewer.style.removeProperty("background");
-  viewer.style.removeProperty("padding");
+  target.classList.remove("is-html");
+  target.style.removeProperty("background");
+  target.style.removeProperty("padding");
   const parsed = await marked.parse(tab.content, {
     async: false,
     gfm: true,
   });
-  viewer.innerHTML = DOMPurify.sanitize(parsed);
-  rewriteRelativeUrls(viewer, tab.base_url);
-  await renderMermaidBlocks();
+  target.innerHTML = DOMPurify.sanitize(parsed);
+  rewriteRelativeUrls(target, tab.base_url);
+  await renderMermaidBlocks(target);
 }
 
 function renderPlainText(tab: DocumentTab) {
@@ -451,9 +458,9 @@ function renderHtml(tab: DocumentTab) {
   viewer.replaceChildren(iframe);
 }
 
-async function renderMermaidBlocks() {
+async function renderMermaidBlocks(root: ParentNode) {
   const blocks = Array.from(
-    viewer.querySelectorAll<HTMLElement>("pre > code[class*='language-mermaid']"),
+    root.querySelectorAll<HTMLElement>("pre > code[class*='language-mermaid']"),
   );
 
   if (blocks.length === 0) return;

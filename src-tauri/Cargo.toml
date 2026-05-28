@@ -1,6 +1,6 @@
 [package]
 name = "litedoc-browser"
-version = "0.1.1"
+version = "0.1.2"
 description = "A lightweight local HTML and Markdown browser."
 authors = ["LiteDoc Browser"]
 edition = "2021"
