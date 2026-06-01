@@ -7,8 +7,12 @@
     "dev": "vite --host 127.0.0.1 --port 1420",
     "build": "tsc && vite build",
     "tauri": "tauri",
-    "desktop:dev": "scripts\\with-vsdev.cmd npm run tauri -- dev",
-    "desktop:build": "scripts\\with-vsdev.cmd npm run tauri -- build"
+    "desktop:dev": "node scripts/desktop-run.mjs dev",
+    "desktop:build": "node scripts/desktop-run.mjs build",
+    "windows:dev": "scripts\\with-vsdev.cmd npm run tauri -- dev",
+    "windows:build": "scripts\\with-vsdev.cmd npm run tauri -- build",
+    "mac:dev": "npm run tauri -- dev",
+    "mac:build": "npm run tauri -- build"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.8.0",

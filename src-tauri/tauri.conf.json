@@ -16,27 +16,55 @@
         "width": 1100,
         "height": 760,
         "minWidth": 760,
-        "minHeight": 520
+        "minHeight": 520,
+        "titleBarStyle": "Overlay",
+        "trafficLightPosition": {
+          "x": 18,
+          "y": 18
+        },
+        "hiddenTitle": true,
+        "acceptFirstMouse": true
       }
     ],
     "security": {
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["D:\\\\**", "$DESKTOP/**", "$DOCUMENT/**", "$DOWNLOAD/**", "$HOME/**"]
+        "scope": [
+          "$DESKTOP/**",
+          "$DOCUMENT/**",
+          "$DOWNLOAD/**",
+          "$HOME/**",
+          "/Users/**",
+          "/Volumes/**",
+          "/private/tmp/**"
+        ]
       }
     }
   },
   "bundle": {
     "active": true,
     "targets": "all",
-    "icon": ["icons/icon.ico"],
+    "icon": [
+      "icons/icon-32.png",
+      "icons/icon-128.png",
+      "icons/icon-256.png",
+      "icons/icon-512.png",
+      "icons/icon-1024.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
     "fileAssociations": [
       {
         "ext": ["md", "markdown", "html", "htm", "txt", "text"],
         "name": "LiteDoc Browser Document",
         "description": "Open with LiteDoc Browser"
       }
-    ]
+    ],
+    "macOS": {
+      "signingIdentity": "-",
+      "hardenedRuntime": false,
+      "minimumSystemVersion": "13.0"
+    }
   }
 }

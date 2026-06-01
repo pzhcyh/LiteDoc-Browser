@@ -30,6 +30,8 @@ let htmlObjectUrl: string | null = null;
 let untitledCount = 1;
 
 const app = document.querySelector<HTMLDivElement>("#app");
+const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+const isTauriRuntime = "__TAURI_INTERNALS__" in window;
 
 if (!app) {
   throw new Error("App root was not found.");
@@ -37,28 +39,38 @@ if (!app) {
 
 app.innerHTML = `
   <main class="shell">
-    <header class="toolbar">
-      <div class="toolbar-group">
+    <header class="titlebar" data-tauri-drag-region>
+      <div class="app-mark" data-tauri-drag-region>LiteDoc</div>
+      <div id="file-title" class="file-title">No file open</div>
+      <div class="toolbar-group toolbar-primary">
         <button id="open-button" type="button">Open</button>
         <button id="new-md-button" type="button">New MD</button>
         <button id="save-button" type="button" disabled>Save</button>
         <button id="save-as-button" type="button" disabled>Save As</button>
-        <button id="mode-button" type="button" disabled>Edit</button>
       </div>
-      <div id="file-title" class="file-title">No file open</div>
       <div class="toolbar-group">
+        <button id="mode-button" type="button" disabled>Edit</button>
         <button id="theme-button" type="button">Dark</button>
       </div>
     </header>
-    <nav id="tab-bar" class="tab-bar" aria-label="Open documents"></nav>
-    <section id="drop-zone" class="workspace">
-      <div id="empty-state" class="empty-state">
-        <strong>Open or create a local document</strong>
-        <span>Use Open, New MD, drag a file here, or launch LiteDoc with a file path.</span>
-      </div>
-      <div id="viewer" class="viewer" hidden></div>
-      <textarea id="editor" class="editor" spellcheck="false" hidden></textarea>
-      <div id="live-preview" class="viewer live-preview" hidden></div>
+    <section class="content">
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <span>Documents</span>
+          <span id="tab-count" class="tab-count">0</span>
+        </div>
+        <nav id="tab-bar" class="tab-bar" aria-label="Open documents"></nav>
+      </aside>
+      <section id="drop-zone" class="workspace">
+        <div id="empty-state" class="empty-state">
+          <div class="empty-icon" aria-hidden="true"></div>
+          <strong>LiteDoc Browser</strong>
+          <span>No document selected</span>
+        </div>
+        <div id="viewer" class="viewer" hidden></div>
+        <textarea id="editor" class="editor" spellcheck="false" hidden></textarea>
+        <div id="live-preview" class="viewer live-preview" hidden></div>
+      </section>
     </section>
     <footer class="statusbar">
       <span id="status">Ready</span>
@@ -73,6 +85,7 @@ const saveAsButton = getElement<HTMLButtonElement>("save-as-button");
 const modeButton = getElement<HTMLButtonElement>("mode-button");
 const themeButton = getElement<HTMLButtonElement>("theme-button");
 const fileTitle = getElement<HTMLDivElement>("file-title");
+const tabCount = getElement<HTMLSpanElement>("tab-count");
 const tabBar = getElement<HTMLElement>("tab-bar");
 const dropZone = getElement<HTMLElement>("drop-zone");
 const emptyState = getElement<HTMLDivElement>("empty-state");
@@ -139,17 +152,17 @@ dropZone.addEventListener("drop", async (event) => {
 });
 
 window.addEventListener("keydown", async (event) => {
-  if (event.ctrlKey && event.key.toLowerCase() === "o") {
+  if (isPrimaryShortcut(event) && event.key.toLowerCase() === "o") {
     event.preventDefault();
     await openFile();
   }
 
-  if (event.ctrlKey && event.key.toLowerCase() === "n") {
+  if (isPrimaryShortcut(event) && event.key.toLowerCase() === "n") {
     event.preventDefault();
     newDocument();
   }
 
-  if (event.ctrlKey && event.key.toLowerCase() === "s") {
+  if (isPrimaryShortcut(event) && event.key.toLowerCase() === "s") {
     event.preventDefault();
     if (event.shiftKey) {
       await saveFileAs();
@@ -158,7 +171,7 @@ window.addEventListener("keydown", async (event) => {
     }
   }
 
-  if (event.ctrlKey && event.key.toLowerCase() === "e") {
+  if (isPrimaryShortcut(event) && event.key.toLowerCase() === "e") {
     event.preventDefault();
     toggleMode();
   }
@@ -175,6 +188,8 @@ void openStartupFile();
 updateChrome();
 
 async function openStartupFile() {
+  if (!isTauriRuntime) return;
+
   try {
     const file = await invoke<FileDocument | null>("open_startup_file");
     if (file) {
@@ -186,6 +201,11 @@ async function openStartupFile() {
 }
 
 async function openFile() {
+  if (!isTauriRuntime) {
+    setStatus("File dialogs are available in the macOS desktop app.");
+    return;
+  }
+
   try {
     const file = await invoke<FileDocument | null>("open_file_dialog");
     if (file) {
@@ -247,6 +267,11 @@ async function saveFile() {
   const tab = getActiveTab();
   if (!tab) return;
 
+  if (!isTauriRuntime) {
+    setStatus("Saving is available in the macOS desktop app.");
+    return;
+  }
+
   if (!tab.path) {
     await saveFileAs();
     return;
@@ -276,6 +301,11 @@ async function saveFile() {
 async function saveFileAs() {
   const tab = getActiveTab();
   if (!tab) return;
+
+  if (!isTauriRuntime) {
+    setStatus("Save As is available in the macOS desktop app.");
+    return;
+  }
 
   try {
     const saved = await invoke<FileDocument | null>("save_file_dialog", {
@@ -404,7 +434,7 @@ function renderTabs() {
       close.type = "button";
       close.className = "tab-close";
       close.title = `Close ${tab.name}`;
-      close.textContent = "x";
+      close.textContent = "×";
       close.addEventListener("click", (event) => {
         event.stopPropagation();
         void closeTab(tab.id);
@@ -573,6 +603,7 @@ function updateChrome() {
   const fileName = tab ? `${tab.name}${tab.dirty ? " *" : ""}` : "No file open";
   fileTitle.textContent = fileName;
   fileTitle.title = tab?.path || fileName;
+  tabCount.textContent = tabs.length.toString();
   document.title = tab ? `${fileName} - LiteDoc Browser` : "LiteDoc Browser";
   saveButton.disabled = !tab || !tab.dirty;
   saveAsButton.disabled = !tab;
@@ -609,13 +640,21 @@ function isRelativeUrl(value: string) {
   return !/^(?:[a-z][a-z0-9+.-]*:|#|\/)/i.test(value);
 }
 
+function isPrimaryShortcut(event: KeyboardEvent) {
+  return isMac ? event.metaKey && !event.ctrlKey : event.ctrlKey && !event.metaKey;
+}
+
 function fileUrlToPath(url: URL) {
   const path = decodeURIComponent(url.pathname);
   if (url.hostname) {
-    return `\\\\${url.hostname}${path.replace(/\//g, "\\")}`;
+    return isMac ? `//${url.hostname}${path}` : `\\\\${url.hostname}${path.replace(/\//g, "\\")}`;
   }
 
-  return path.replace(/^\/([a-zA-Z]:)/, "$1").replace(/\//g, "\\");
+  if (/^\/[a-zA-Z]:/.test(path)) {
+    return path.slice(1).replace(/\//g, "\\");
+  }
+
+  return path;
 }
 
 function escapeAttribute(value: string) {
